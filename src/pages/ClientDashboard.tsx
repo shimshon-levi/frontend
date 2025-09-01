@@ -1,13 +1,28 @@
-import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
+import PageWrapper from "../components/PageWrapper";
+import { useMyCases } from "../services/queries/cases";
+import DataTable from "../components/DataTable";
 
-const ClientDashboard: React.FC = () => {
+const ClientDashboard = () => {
+  const { data: cases = [], isLoading } = useMyCases();
+
   return (
-    <>
-      <Box>
-        <Typography variant="h4">לוח הבקרה של הלקוח</Typography>
-      </Box>
-    </>
+    <PageWrapper className="p-3">
+      <Typography variant="h5" gutterBottom>
+        הדשבורד שלי
+      </Typography>
+      {isLoading ? (
+        "טוען..."
+      ) : (
+        <DataTable
+          columns={[
+            { id: "title", label: "כותרת" },
+            { id: "status", label: "סטטוס" },
+          ]}
+          data={cases}
+        />
+      )}
+    </PageWrapper>
   );
 };
 

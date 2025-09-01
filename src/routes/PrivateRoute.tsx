@@ -1,23 +1,20 @@
-// src/routes/PrivateRoute.tsx
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import type { RootState } from "../store/index";
+import type { RootState } from "../store";
 import type { JSX } from "react";
 
-interface Props {
+type Role = "admin" | "client";
+
+type Props = {
   children: JSX.Element;
-  allowedRoles: ("admin" | "client")[];
-}
+  allowedRoles: Role[];
+};
 
 const PrivateRoute = ({ children, allowedRoles }: Props) => {
-  const { isAuthenticated, role } = useSelector(
-    (state: RootState) => state.auth
-  );
-
+  const { isAuthenticated, role } = useSelector((s: RootState) => s.auth);
   if (!isAuthenticated || !role || !allowedRoles.includes(role)) {
     return <Navigate to="/login" replace />;
   }
-
   return children;
 };
 

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../store/auth/authActions";
 import type { AppDispatch } from "../store";
 
-export default function LogoutButton() {
+const LogoutButton = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
@@ -18,4 +18,6 @@ export default function LogoutButton() {
       התנתק
     </Button>
   );
-}
+};
+
+export default LogoutButton;

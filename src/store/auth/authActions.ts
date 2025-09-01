@@ -19,11 +19,15 @@ export const loginUser =
   (email: string, password: string) => async (dispatch: AppDispatch) => {
     try {
       dispatch(loginStart());
-      await authApi.post(environment.api.auth.login, { email, password }); // השרת מציב HttpOnly cookie
-      const { data } = await authApi.get(environment.api.auth.me);
+      const { data } = await authApi.post(environment.api.auth.login, {
+        email,
+        password,
+      });
+      // data = { token, userId, role } כבר מהשרת
       dispatch(
         loginSuccess({ userId: data.userId, token: "cookie", role: data.role })
       );
+      // אופציונלי: לא צריך /auth/me כאן
     } catch (error: any) {
       const message = error?.response?.data?.message || "Login failed";
       dispatch(loginFailure(message));
@@ -37,13 +41,14 @@ export const registerUser =
     password: string;
     phone?: string;
     address?: string;
-    role?: "admin" | "client";
   }) =>
   async (dispatch: AppDispatch) => {
     try {
       dispatch(loginStart());
-      await authApi.post(environment.api.auth.register, payload); // השרת מציב HttpOnly cookie
-      const { data } = await authApi.get(environment.api.auth.me);
+      const { data } = await authApi.post(
+        environment.api.auth.register,
+        payload
+      );
       dispatch(
         loginSuccess({ userId: data.userId, token: "cookie", role: data.role })
       );
