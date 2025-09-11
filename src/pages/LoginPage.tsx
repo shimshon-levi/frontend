@@ -1,67 +1,64 @@
-// src/pages/LoginPage.tsx
-import React, { useEffect, useState } from "react";
-import { Box, Typography, TextField, Button, Alert } from "@mui/material";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../store/auth/authActions";
-import type { RootState, AppDispatch } from "../store/index";
+import type { RootState, AppDispatch } from "../store";
+import { login } from "../store/auth/authActions";
 import { useNavigate } from "react-router-dom";
+import { PATHS } from "../routes/paths";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
 
-const LoginPage: React.FC = () => {
+export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, isAuthenticated, role } = useSelector(
-    (state: RootState) => state.auth
-  );
   const navigate = useNavigate();
-
+  const { loading, error, isAuthenticated, user } = useSelector(
+    (s: RootState) => s.auth
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      navigate(user.role === "client" ? PATHS.client.root : PATHS.admin.root, {
+        replace: true,
+      });
+    }
+  }, [isAuthenticated, user?.role, navigate]);
+
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(loginUser(email, password));
+    dispatch(login({ email, password }));
   };
 
-  useEffect(() => {
-    if (isAuthenticated && role) {
-      navigate(role === "admin" ? "/advisor" : "/client");
-    }
-  }, [isAuthenticated, role, navigate]);
-
   return (
-    <Box sx={{ maxWidth: 400, mx: "auto" }}>
-      <Typography variant="h4">התחברות</Typography>
-      {error && <Alert severity="error">{error}</Alert>}
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="אימייל"
-          fullWidth
-          margin="normal"
+    <div className="min-h-screen grid place-items-center bg-gray-50" dir="rtl">
+      <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-3">
+        <div className="text-xl font-semibold">התחברות</div>
+        {error && <div className="text-sm text-red-600">{error}</div>}
+        <Input
+          placeholder="אימייל"
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
-        <TextField
-          label="סיסמה"
+        <Input
+          placeholder="סיסמה"
           type="password"
-          fullWidth
-          margin="normal"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          fullWidth
-          disabled={loading}
-        >
+        <Button type="submit" disabled={loading || !email || !password}>
           {loading ? "מתחבר..." : "התחבר"}
         </Button>
+        <button
+          type="button"
+          className="text-sm text-gray-600 hover:underline"
+          onClick={() => navigate(PATHS.register)}
+        >
+          עדיין אין לך משתמש? הרשם
+        </button>
       </form>
-      <Button fullWidth sx={{ mt: 1 }} onClick={() => navigate("/register")}>
-        עדיין אין לך משתמש? הרשם כאן
-      </Button>
-    </Box>
+    </div>
   );
-};
-
-export default LoginPage;
+}

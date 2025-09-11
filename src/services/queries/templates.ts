@@ -1,49 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { clientApi } from "../../api";
-import { environment } from "../../utils/globals";
-import { qk } from "./keys";
+import { get, post } from "../http";
 
-export type Template = {
-  _id: string;
-  title: string;
+export interface Template {
+  id: string;
+  name: string;
   description?: string;
-  questions?: { question: string; fieldType: string; required?: boolean }[];
-  requiredDocuments?: {
-    name: string;
-    description?: string;
-    required?: boolean;
-  }[];
-};
+  createdAt?: string;
+}
 
-export const useMyTemplates = () =>
-  useQuery<Template[]>({
-    queryKey: qk.templates.my(),
-    queryFn: async () => {
-      const { data } = await clientApi.get(environment.api.templates.my);
-      return data;
-    },
-  });
+export const templatesQueries = {
+  my: async () => {
+    return await get<Template[]>("/templates/my");
+  },
 
-export const useTemplateById = (id: string) =>
-  useQuery<Template>({
-    queryKey: qk.templates.byId(id),
-    queryFn: async () => {
-      const { data } = await clientApi.get(environment.api.templates.byId(id));
-      return data;
-    },
-    enabled: !!id,
-  });
+  create: async (dto: { name: string; description?: string }) => {
+    return await post<Template>("/templates", dto);
+  },
 
-export const useCreateTemplate = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: Omit<Template, "_id">) => {
-      const { data } = await clientApi.post(
-        environment.api.templates.root,
-        payload
-      );
-      return data as Template;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.templates.my() }),
-  });
+  byId: async (id: string) => {
+    return await get<Template>(`/templates/${id}`);
+  },
 };

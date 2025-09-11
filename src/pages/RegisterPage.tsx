@@ -1,23 +1,17 @@
-// src/pages/RegisterPage.tsx
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  Stack,
-} from "@mui/material";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser } from "../store/auth/authActions";
 import type { AppDispatch, RootState } from "../store";
+import { registerUser } from "../store/auth/authActions";
 import { useNavigate } from "react-router-dom";
+import { PATHS } from "../routes/paths";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
 
-const RegisterPage: React.FC = () => {
+export default function RegisterPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated, role } = useSelector(
-    (state: RootState) => state.auth
+  const { loading, error, isAuthenticated, user } = useSelector(
+    (s: RootState) => s.auth
   );
 
   const [form, setForm] = useState({
@@ -27,83 +21,73 @@ const RegisterPage: React.FC = () => {
     phone: "",
     address: "",
   });
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      navigate(user.role === "client" ? PATHS.client.root : PATHS.admin.root, {
+        replace: true,
+      });
+    }
+  }, [isAuthenticated, user?.role, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(registerUser(form));
   };
 
-  useEffect(() => {
-    if (isAuthenticated && role) {
-      navigate(role === "admin" ? "/advisor" : "/client");
-    }
-  }, [isAuthenticated, role, navigate]);
-
   return (
-    <Box sx={{ maxWidth: 500, mx: "auto" }}>
-      <Typography variant="h4" gutterBottom>
-        הרשמה
-      </Typography>
-
-      {error && <Alert severity="error">{error}</Alert>}
-
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <TextField
-            label="שם"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-          <TextField
-            label="אימייל"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-          <TextField
-            label="סיסמה"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-          <TextField
-            label="טלפון"
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            fullWidth
-          />
-          <TextField
-            label="כתובת"
-            name="address"
-            value={form.address}
-            onChange={handleChange}
-            fullWidth
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={loading}
-            fullWidth
-          >
-            {loading ? "נרשם..." : "צור משתמש"}
-          </Button>
-        </Stack>
+    <div className="min-h-screen grid place-items-center bg-gray-50" dir="rtl">
+      <form onSubmit={submit} className="card p-6 w-full max-w-md space-y-3">
+        <div className="text-xl font-semibold">הרשמה</div>
+        {error && <div className="text-sm text-red-600">{error}</div>}
+        <Input
+          name="name"
+          placeholder="שם"
+          value={form.name}
+          onChange={onChange}
+          required
+        />
+        <Input
+          name="email"
+          placeholder="אימייל"
+          value={form.email}
+          onChange={onChange}
+          type="email"
+          required
+        />
+        <Input
+          name="password"
+          placeholder="סיסמה"
+          value={form.password}
+          onChange={onChange}
+          type="password"
+          required
+        />
+        <Input
+          name="phone"
+          placeholder="טלפון"
+          value={form.phone}
+          onChange={onChange}
+        />
+        <Input
+          name="address"
+          placeholder="כתובת"
+          value={form.address}
+          onChange={onChange}
+        />
+        <Button type="submit" disabled={loading}>
+          {loading ? "נרשם..." : "צור משתמש"}
+        </Button>
+        <button
+          type="button"
+          className="text-sm text-gray-600 hover:underline"
+          onClick={() => navigate(PATHS.login)}
+        >
+          יש לך חשבון? התחבר
+        </button>
       </form>
-    </Box>
+    </div>
   );
-};
-
-export default RegisterPage;
+}

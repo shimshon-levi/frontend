@@ -1,57 +1,34 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { clientApi } from "../../api";
-import { environment } from "../../utils/globals";
-import { qk } from "./keys";
+import { get, post, patch } from "../http";
 
-export type CaseStatus = "open" | "in_progress" | "completed" | "closed";
-export type CaseEntity = { _id: string; title: string; status: CaseStatus };
+export type CaseStatus = "open" | "in_progress" | "done" | "pending";
 
-export const useMyCases = () =>
-  useQuery<CaseEntity[]>({
-    queryKey: qk.cases.my(),
-    queryFn: async () => {
-      const { data } = await clientApi.get(`${environment.api.cases.root}/my`);
-      return data;
-    },
-  });
+export interface Case {
+  id: string;
+  title: string;
+  status: CaseStatus;
+  clientId: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
 
-export const useCaseById = (id: string) =>
-  useQuery<CaseEntity>({
-    queryKey: qk.cases.byId(id),
-    queryFn: async () => {
-      const { data } = await clientApi.get(environment.api.cases.byId(id));
-      return data;
-    },
-    enabled: !!id,
-  });
+export const casesQueries = {
+  my: async () => {
+    return await get<Case[]>("/cases/my");
+  },
 
-export const useCreateCaseFromTemplate = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: { templateId: string; clientId: string }) => {
-      const { data } = await clientApi.post(
-        environment.api.cases.fromTemplate,
-        payload
-      );
-      return data as CaseEntity;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.cases.my() }),
-  });
-};
+  byId: async (id: string) => {
+    return await get<Case>(`/cases/${id}`);
+  },
 
-export const useUpdateCaseStatus = (id: string) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: { status: CaseStatus }) => {
-      const { data } = await clientApi.patch(
-        environment.api.cases.byId(id),
-        payload
-      );
-      return data as CaseEntity;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.cases.my() });
-      qc.invalidateQueries({ queryKey: qk.cases.byId(id) });
-    },
-  });
+  create: async (dto: { title: string; clientId: string }) => {
+    return await post<Case>("/cases", dto);
+  },
+
+  fromTemplate: async (dto: { templateId: string; clientId: string }) => {
+    return await post<Case>("/cases/from-template", dto);
+  },
+
+  update: async (id: string, dto: Partial<Case>) => {
+    return await patch<Case>(`/cases/${id}`, dto);
+  },
 };

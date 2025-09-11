@@ -1,34 +1,41 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { clientApi } from "../../api";
-import { environment } from "../../utils/globals";
-import { qk } from "./keys";
+import { get, post } from "../http";
 
-export type Client = {
-  _id: string;
-  userId: { name?: string; email?: string };
-  advisorId: string;
-  caseIds?: string[];
-};
+export interface CreateClientDto {
+  firstName: string;
+  lastName?: string;
+  phone?: string;
+  email?: string;
+  company?: string;
+}
 
-export const useMyClients = () =>
-  useQuery<Client[]>({
-    queryKey: qk.clients.my(),
-    queryFn: async () => {
-      const { data } = await clientApi.get(environment.api.clients.myClients);
-      return data;
-    },
-  });
+export interface Client {
+  id: string;
+  firstName: string;
+  lastName?: string;
+  phone?: string;
+  email?: string;
+  company?: string;
+  status?: "active" | "inactive" | "pending";
+  activeCasesCount?: number;
+}
 
-export const useCreateClient = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: { userId: string; advisorId: string }) => {
-      const { data } = await clientApi.post(
-        environment.api.clients.root,
-        payload
-      );
-      return data as Client;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.clients.my() }),
-  });
+export const clientsQueries = {
+  create: async (dto: CreateClientDto) => {
+    return await post<Client>("/clients", dto);
+  },
+
+  // שים לב: אצלך זה לרוב Admin בלבד (requireAdmin)
+  myClients: async () => {
+    return await get<Client[]>("/clients/my-clients");
+  },
+
+  me: async () => {
+    return await get<Client>("/clients/me");
+  },
+
+  search: async (params: { q?: string; page?: number; limit?: number }) => {
+    return await get<{ items: Client[]; total: number }>("/clients", {
+      params,
+    });
+  },
 };

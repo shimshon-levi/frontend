@@ -1,45 +1,56 @@
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from "@mui/material";
-
-type Column<T> = {
-  id: keyof T | string;
-  label: string;
-  render?: (row: T) => React.ReactNode;
+type Column<T = any> = {
+  field: keyof T & string;
+  headerName: string;
+  width?: number;
 };
-type DataTableProps<T> = { columns: Column<T>[]; data: T[] };
+type Props<T = any> = { rows?: T[]; columns?: Column<T>[] };
 
-const DataTable = <T extends object>({ columns, data }: DataTableProps<T>) => {
+export default function DataTable<T = any>({
+  rows = [],
+  columns = [],
+}: Props<T>) {
   return (
-    <TableContainer component={Paper} elevation={1}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="text-left border-b bg-gray-50">
             {columns.map((c) => (
-              <TableCell key={String(c.id)}>{c.label}</TableCell>
+              <th
+                key={String(c.field)}
+                style={{ width: c.width }}
+                className="px-3 py-2 font-medium"
+              >
+                {c.headerName}
+              </th>
             ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {data.map((row, i) => (
-            <TableRow key={i}>
-              {columns.map((c) => (
-                <TableCell key={String(c.id)}>
-                  {c.render ? c.render(row) : (row as any)[c.id]}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="px-3 py-6 text-center text-gray-500"
+              >
+                אין נתונים
+              </td>
+            </tr>
+          ) : (
+            rows.map((r: any, i) => (
+              <tr
+                key={i}
+                className="border-b last:border-none hover:bg-gray-50"
+              >
+                {columns.map((c) => (
+                  <td key={String(c.field)} className="px-3 py-2">
+                    {String(r[c.field] ?? "")}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
-};
-
-export default DataTable;
+}

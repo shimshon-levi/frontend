@@ -1,25 +1,25 @@
-import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { Role } from "./roles";
+
+type User = { id: string; email?: string; role: Role };
 
 interface AuthState {
-  userId: string | null;
+  user: User | null;
   token: string | null;
-  role: "admin" | "client" | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: AuthState = {
-  userId: null,
+  user: null,
   token: null,
-  role: null,
   isAuthenticated: false,
   loading: false,
   error: null,
 };
 
-const authSlice = createSlice({
+const slice = createSlice({
   name: "auth",
   initialState,
   reducers: {
@@ -29,33 +29,35 @@ const authSlice = createSlice({
     },
     loginSuccess(
       state,
-      action: PayloadAction<{
-        userId: string;
-        token: string;
-        role: "admin" | "client";
-      }>
+      action: PayloadAction<{ user: User; token?: string | null }>
     ) {
-      state.userId = action.payload.userId;
-      state.token = action.payload.token;
-      state.role = action.payload.role;
+      state.user = action.payload.user;
+      state.token = action.payload.token ?? null;
       state.isAuthenticated = true;
       state.loading = false;
+      state.error = null;
+    },
+    setMe(state, action: PayloadAction<User | null>) {
+      state.user = action.payload;
+      state.isAuthenticated = !!action.payload;
+      if (!action.payload) state.token = null;
     },
     loginFailure(state, action: PayloadAction<string>) {
       state.loading = false;
       state.error = action.payload;
+      state.isAuthenticated = false;
+      state.user = null;
+      state.token = null;
     },
     logout(state) {
-      state.userId = null;
+      state.user = null;
       state.token = null;
-      state.role = null;
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
     },
   },
 });
-
-export const { loginStart, loginSuccess, loginFailure, logout } =
-  authSlice.actions;
-export default authSlice.reducer;
+export const { loginStart, loginSuccess, loginFailure, setMe, logout } =
+  slice.actions;
+export default slice.reducer;

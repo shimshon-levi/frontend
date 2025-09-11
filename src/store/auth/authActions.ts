@@ -1,67 +1,84 @@
 import type { AppDispatch } from "../index";
-import { loginStart, loginSuccess, loginFailure, logout } from "./authSlice";
-import { authApi } from "../../api"; // <<< משתמשים ב-authApi
-import { environment } from "../../utils/globals"; // <<< נתיבים מרוכזים
+import api from "../../api/baseApi";
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  logout as logoutAction,
+  setMe,
+} from "./authSlice";
+import type { Role } from "./roles";
 
-// טוען סטטוס משתמש בתחילת האפליקציה (אם יש קוקי תקף בצד שרת)
+type AuthUserResp = {
+  userId: string;
+  email?: string;
+  role: Role;
+  token?: string;
+};
+type MeResp = { userId: string; email?: string; role: Role };
+type LoginDto = { email: string; password: string };
+type RegisterDto = {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  address?: string;
+};
+
+const getErr = (e: any) =>
+  e?.response?.data?.message ?? e?.message ?? "Unexpected error";
+
+export const login = (dto: LoginDto) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(loginStart());
+    const { data } = await api.post<AuthUserResp>("/auth/login", dto);
+    dispatch(
+      loginSuccess({
+        user: { id: data.userId, email: data.email, role: data.role },
+        token: data.token ?? null,
+      })
+    );
+  } catch (e: any) {
+    dispatch(loginFailure(getErr(e)));
+  }
+};
+
+export const register = (dto: RegisterDto) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(loginStart());
+    await api.post("/auth/register", dto);
+    const { data } = await api.post<AuthUserResp>("/auth/login", {
+      email: dto.email,
+      password: dto.password,
+    });
+    dispatch(
+      loginSuccess({
+        user: { id: data.userId, email: data.email, role: data.role },
+        token: data.token ?? null,
+      })
+    );
+  } catch (e: any) {
+    dispatch(loginFailure(getErr(e)));
+  }
+};
+
 export const fetchMe = () => async (dispatch: AppDispatch) => {
   try {
-    const { data } = await authApi.get(environment.api.auth.me); // { userId, email, role }
-    dispatch(
-      loginSuccess({ userId: data.userId, token: "cookie", role: data.role })
-    );
+    const { data } = await api.get<MeResp>("/auth/me");
+    dispatch(setMe({ id: data.userId, email: data.email, role: data.role }));
   } catch {
-    // לא מחובר – מתעלמים
+    dispatch(setMe(null));
   }
 };
 
-export const loginUser =
-  (email: string, password: string) => async (dispatch: AppDispatch) => {
-    try {
-      dispatch(loginStart());
-      const { data } = await authApi.post(environment.api.auth.login, {
-        email,
-        password,
-      });
-      // data = { token, userId, role } כבר מהשרת
-      dispatch(
-        loginSuccess({ userId: data.userId, token: "cookie", role: data.role })
-      );
-      // אופציונלי: לא צריך /auth/me כאן
-    } catch (error: any) {
-      const message = error?.response?.data?.message || "Login failed";
-      dispatch(loginFailure(message));
-    }
-  };
-
-export const registerUser =
-  (payload: {
-    name: string;
-    email: string;
-    password: string;
-    phone?: string;
-    address?: string;
-  }) =>
-  async (dispatch: AppDispatch) => {
-    try {
-      dispatch(loginStart());
-      const { data } = await authApi.post(
-        environment.api.auth.register,
-        payload
-      );
-      dispatch(
-        loginSuccess({ userId: data.userId, token: "cookie", role: data.role })
-      );
-    } catch (error: any) {
-      const message = error?.response?.data?.message || "Registration failed";
-      dispatch(loginFailure(message));
-    }
-  };
-
-export const logoutUser = () => async (dispatch: AppDispatch) => {
+export const doLogout = () => async (dispatch: AppDispatch) => {
   try {
-    await authApi.post(environment.api.auth.logout); // מוחק את הקוקי בצד שרת
+    await api.post("/auth/logout");
   } finally {
-    dispatch(logout()); // תמיד ננקה Redux
+    dispatch(logoutAction());
   }
 };
+
+// תאימות לייבוא ישנים
+export { register as registerUser };
+export { doLogout as logoutUser };

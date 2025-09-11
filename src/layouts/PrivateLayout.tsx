@@ -1,14 +1,12 @@
 import { Outlet } from "react-router-dom";
-import { Container } from "@mui/material";
-import PrivateHeader from "../components/PrivateHeader";
+import AppShell from "../nav/AppShell";
+import Sidebar from "../nav/Sidebar";
+import TopBar from "../nav/TopBar";
 
-const PrivateLayout = () => (
-  <>
-    <PrivateHeader />
-    <Container maxWidth="lg" sx={{ pt: 2 }}>
+export default function PrivateLayout() {
+  return (
+    <AppShell SidebarComponent={Sidebar} TopBarComponent={TopBar}>
       <Outlet />
-    </Container>
-  </>
-);
-
-export default PrivateLayout;
+    </AppShell>
+  );
+}

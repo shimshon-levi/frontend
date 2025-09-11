@@ -1,13 +1,18 @@
-export const qk = {
-  clients: { all: ["clients"] as const, my: () => ["clients", "my"] as const },
-  templates: {
-    all: ["templates"] as const,
-    my: () => ["templates", "my"] as const,
-    byId: (id: string) => ["templates", id] as const,
+export const keys = {
+  clients: {
+    all: ["clients"] as const,
+    my: () => [...keys.clients.all, "my"] as const,
+    me: () => [...keys.clients.all, "me"] as const,
+    search: (q?: string) => [...keys.clients.all, "search", q ?? ""] as const,
   },
   cases: {
     all: ["cases"] as const,
-    my: () => ["cases", "my"] as const,
-    byId: (id: string) => ["cases", id] as const,
+    my: () => [...keys.cases.all, "my"] as const,
+    byId: (id: string) => [...keys.cases.all, "id", id] as const,
   },
-} as const;
+  templates: {
+    all: ["templates"] as const,
+    my: () => [...keys.templates.all, "my"] as const,
+    byId: (id: string) => [...keys.templates.all, "id", id] as const,
+  },
+};
