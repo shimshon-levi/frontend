@@ -12,8 +12,14 @@ export interface Case {
 }
 
 export const casesQueries = {
+  // לקוח: התיקים שלי
   my: async () => {
     return await get<Case[]>("/cases/my");
+  },
+
+  // מנהל: רשימת תיקים (התאם בהתאם ל-API שלך)
+  listAll: async () => {
+    return await get<Case[]>("/cases");
   },
 
   byId: async (id: string) => {

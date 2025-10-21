@@ -26,7 +26,7 @@ export const clientsQueries = {
 
   // שים לב: אצלך זה לרוב Admin בלבד (requireAdmin)
   myClients: async () => {
-    return await get<Client[]>("/clients/my-clients");
+    return await get<Client[]>("/api/clients/my-clients");
   },
 
   me: async () => {

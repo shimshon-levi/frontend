@@ -6,6 +6,7 @@ import {
   loginFailure,
   logout as logoutAction,
   setMe,
+  setAuthInitialized,
 } from "./authSlice";
 import type { Role } from "./roles";
 
@@ -16,6 +17,7 @@ type AuthUserResp = {
   token?: string;
 };
 type MeResp = { userId: string; email?: string; role: Role };
+
 type LoginDto = { email: string; password: string };
 type RegisterDto = {
   name: string;
@@ -32,6 +34,14 @@ export const login = (dto: LoginDto) => async (dispatch: AppDispatch) => {
   try {
     dispatch(loginStart());
     const { data } = await api.post<AuthUserResp>("/auth/login", dto);
+
+    // נכניס Bearer לכל הבקשות – פתרון עוקף שמבטיח שלא ניתקע אם cookie לא נשלח
+    if (data.token) {
+      api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+      // אופציונלי: לשמור בלוקאלסטורג’ כדי לשרוד רענון
+      localStorage.setItem("auth_token", data.token);
+    }
+
     dispatch(
       loginSuccess({
         user: { id: data.userId, email: data.email, role: data.role },
@@ -51,6 +61,12 @@ export const register = (dto: RegisterDto) => async (dispatch: AppDispatch) => {
       email: dto.email,
       password: dto.password,
     });
+
+    if (data.token) {
+      api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+      localStorage.setItem("auth_token", data.token);
+    }
+
     dispatch(
       loginSuccess({
         user: { id: data.userId, email: data.email, role: data.role },
@@ -64,10 +80,16 @@ export const register = (dto: RegisterDto) => async (dispatch: AppDispatch) => {
 
 export const fetchMe = () => async (dispatch: AppDispatch) => {
   try {
+    // אם רעננו דף ואיבדנו את ה-default, נטען Bearer מלוקאלסטורג’ (אם יש)
+    const saved = localStorage.getItem("auth_token");
+    if (saved) api.defaults.headers.common["Authorization"] = `Bearer ${saved}`;
+
     const { data } = await api.get<MeResp>("/auth/me");
     dispatch(setMe({ id: data.userId, email: data.email, role: data.role }));
   } catch {
     dispatch(setMe(null));
+  } finally {
+    dispatch(setAuthInitialized(true));
   }
 };
 
@@ -75,6 +97,9 @@ export const doLogout = () => async (dispatch: AppDispatch) => {
   try {
     await api.post("/auth/logout");
   } finally {
+    // ניקוי Bearer כדי לא לשלוח טוקן ישן
+    delete api.defaults.headers.common["Authorization"];
+    localStorage.removeItem("auth_token");
     dispatch(logoutAction());
   }
 };

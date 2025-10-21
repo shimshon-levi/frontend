@@ -9,6 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  initialized: boolean; // <- חדש: כדי שלא נבצע redirect מוקדם
 }
 
 const initialState: AuthState = {
@@ -17,6 +18,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   loading: false,
   error: null,
+  initialized: false,
 };
 
 const slice = createSlice({
@@ -42,6 +44,10 @@ const slice = createSlice({
       state.isAuthenticated = !!action.payload;
       if (!action.payload) state.token = null;
     },
+    // מסמן שסיימנו אתחול (אחרי fetchMe, הצליח או נכשל)
+    setAuthInitialized(state, action: PayloadAction<boolean>) {
+      state.initialized = action.payload;
+    },
     loginFailure(state, action: PayloadAction<string>) {
       state.loading = false;
       state.error = action.payload;
@@ -55,9 +61,18 @@ const slice = createSlice({
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
+      state.initialized = true;
     },
   },
 });
-export const { loginStart, loginSuccess, loginFailure, setMe, logout } =
-  slice.actions;
+
+export const {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  setMe,
+  setAuthInitialized,
+  logout,
+} = slice.actions;
+
 export default slice.reducer;

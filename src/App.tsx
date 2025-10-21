@@ -22,7 +22,7 @@ import { PATHS } from "./routes/paths";
 const App = () => {
   const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
-    dispatch(fetchMe());
+    dispatch(fetchMe()); // יפעיל initialized=true בסוף
   }, [dispatch]);
 
   return (

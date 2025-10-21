@@ -1,26 +1,39 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store";
+
 import PageWrapper from "../../components/PageWrapper";
 import DataTable from "../../components/DataTable";
 import StatCard from "../../components/StatCard";
 import QuickActions from "../../components/QuickActions";
+
 import { keys } from "../../services/queries/keys";
 import { casesQueries } from "../../services/queries/cases";
 import { clientsQueries } from "../../services/queries/clients";
 import { templatesQueries } from "../../services/queries/templates";
 
 export default function AdvisorDashboard() {
-  const { data: cases = [] } = useQuery({
-    queryKey: keys.cases.my(),
-    queryFn: casesQueries.my,
-  });
+  const role = useSelector((s: RootState) => s.auth.user?.role);
+
+  // לקוחות – בדרך כלל למנהל בלבד (my-clients)
   const { data: clients = [] } = useQuery({
     queryKey: keys.clients.my(),
     queryFn: clientsQueries.myClients,
+    enabled: role === "admin", // אל תרוץ אם זה לא מנהל
   });
+
+  // תיקים – למנהל נבקש רשימה, לא /cases/my
+  const { data: cases = [] } = useQuery({
+    queryKey: role === "admin" ? keys.cases.list() : keys.cases.my(),
+    queryFn: role === "admin" ? casesQueries.listAll : casesQueries.my,
+    enabled: !!role, // חכה שנדע מי המשתמש
+  });
+
   const { data: templates = [] } = useQuery({
     queryKey: keys.templates.my(),
     queryFn: templatesQueries.my,
+    enabled: role === "admin", // אם תבניות שייכות למנהל
   });
 
   const stats = useMemo(() => {

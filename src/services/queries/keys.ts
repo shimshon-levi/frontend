@@ -7,6 +7,7 @@ export const keys = {
   },
   cases: {
     all: ["cases"] as const,
+    list: () => [...keys.cases.all, "list"] as const, // <- חדש (מנהל)
     my: () => [...keys.cases.all, "my"] as const,
     byId: (id: string) => [...keys.cases.all, "id", id] as const,
   },
